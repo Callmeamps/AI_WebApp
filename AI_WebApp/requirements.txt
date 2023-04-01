@@ -1,0 +1,8 @@
+langchain
+streamlit
+streamlit-chat
+openai
+cohere
+stability-sdk
+google-search-results
+requests
