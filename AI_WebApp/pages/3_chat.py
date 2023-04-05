@@ -84,13 +84,6 @@ headers = {
   "Content-Type": "application/json"
 }
 
-if "id" not in st.session_state:
-  st.session_state.id = 0
-
-if "con_id" not in st.session_state:
-  st.session_state.con_id = 0
-
-
 def gen_convo():
   #global id
 

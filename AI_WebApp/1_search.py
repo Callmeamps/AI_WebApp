@@ -1,5 +1,5 @@
 import os
-import streamlit as st
+import gradio as gr
 from langchain import PromptTemplate, SerpAPIWrapper, SelfAskWithSearchChain
 from langchain.llms import OpenAI
 import config
@@ -19,48 +19,41 @@ search_prompt = PromptTemplate(template=search_template,
 #search = SerpAPIWrapper()
 #self_ask_with_search_cohere = SelfAskWithSearchChain(llm=cohere_llm, search_chain=search, verbose=True)
 
-gpt3 = OpenAI(temperature=0)
+gpt3 = OpenAI(temperature=0, model="text-davinci-002")
 search = SerpAPIWrapper()
 self_ask_with_search_openai = SelfAskWithSearchChain(llm=gpt3,
                                                      search_chain=search,
-                                                     verbose=False)
+                                                     verbose=True)
 
-st.set_page_config(page_title="AceTray", page_icon=":alien:")
+with gr.Blocks() as demo:
+    gr.Markdown("# SearchGPT")
+    with gr.Box():
+        with gr.Column():
+            gr.Markdown("""
+            ## Everybody has an assistant nowadays. Why not have my own?
+            The first implementation of Ace Tray aka Mini Me.
+            This is an active project and will continually go through changes and upgrades.
+            
+            ### [CallMeAmps](blog.callmeamps.one)
+            """)
 
-st.title("SearchGPT")
-st.sidebar.title("Main Menu")
+        with gr.Column():
+            gr.Image(value="cma.jpg")
 
-st.header("Ace Tray | Mini Amps")
-col1, col2 = st.columns(2)
-
-with col1:
-  st.markdown("""
-  ## Everybody has an assistant nowadays. Why not have my own?
-  The first implementation of Ace Tray aka Mini Me.
-  This is an active project and will continually go through changes and upgrades.
-  
-  ### [CallMeAmps](blog.callmeamps.one)
-  """)
-
-with col2:
-  st.image("cma.jpg", width=768)
-
-st.markdown("### Ask Anything")
+        usr_query = gr.TextArea(label="Your question", placeholder="Ask me anything.")
 
 
-def get_text():
-  usr_query = st.text_area(label="Your question", placeholder="")
-  return usr_query
+        send_btn = gr.Button("Send")
 
+        gr.Markdown("### Ace Tray's Answer")
 
-query_input = get_text()
+        formatted_search = search_prompt.format(query=usr_query)
 
-st.markdown("### Ace Tray's Answer")
+        def search_res():
+            response = self_ask_with_search_openai.run(formatted_search)
+            return response
 
-if query_input:
+        results = gr.TextArea()
+        send_btn.click(fn=search_res, outputs=results)
 
-  search_w_format = search_prompt.format(query=query_input)
-
-  search_res = self_ask_with_search_openai.run(search_w_format)
-
-  st.write(search_res)
+demo.launch()
