@@ -1,8 +1,9 @@
 langchain
-streamlit
-streamlit-chat
+gradio
 openai
 cohere
 stability-sdk
 google-search-results
 requests
+wolframalpha
+wikipedia
