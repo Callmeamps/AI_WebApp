@@ -73,32 +73,48 @@ chatgpt_chain = LLMChain(
   memory=memory
 )
 
-basic_tools = load_tools(["serpapi", "wolfram-alpha", "requests_all", "wikipedia"], llm=chatgpt)
+basic_tools = load_tools(["serpapi", "wolfram-alpha", "wikipedia"], llm=chatgpt)
 
 agent = initialize_agent(basic_tools, chatgpt, agent=AgentType.CONVERSATIONAL_REACT_DESCRIPTION, verbose=True, return_intermediate_steps=True)
 
-def ChatAgent(user_input: str, chat_history: list) -> str:
-    response = agent({"input": user_input, "chat_history": chat_history})
-    res = json.dumps(response["intermediate_steps"], indent=2)
-    return res
+def ChatAgent(user_input: str, chatHistory: list):
+    response = agent({"input": user_input, "chat_history": chatHistory})
+    return response
+
+def ScratchAgent(user_input: str, chatHistory: list):
+    response = ChatAgent(user_input=user_input, chatHistory=chatHistory)
+    output = response["output"]
+    # steps = response["intermediate_steps"]
+    # scratchpad = steps[0][0][2]
+    # out = [output, scratchpad]
+    return str(output)
 
 # def RunApp():
 #     chat_history = []
 #     while True:
-#         user_input = input(f"{chat_history[0],}:\n")
-#         if user_input.lower() == "exit":
+#         user_input = input("Ask Anything:\n")
+#         if user_input.lower() == "/":
 #             break
-#         agent_res = ChatAgent(user_input=user_input, chat_history=chat_history)
+#         agent_res = ChatAgent(user_input=user_input, chatHistory=chat_history)
 #         chat_history.append({"role": "user", "content": user_input})
-#         print(agent_res)
+#         resp = agent_res[0]["output"]
+#         dump = agent_res[0]["intermediate_steps"]
+#         scratchpad = dump[0][0][2]
 #         chat_history.append({"role": "assistant", "content": agent_res})
+#         # print(f"AI Thoughts:\n{thought}\nAction:\n{action}\nInput:\n{action_input}\n")
+#         print(f"AI Response:\n{agent_res}\n\nSteps:\n{scratchpad}")
+
 
 # RunApp()
 
 chat_history = []
-
+scratch_history = []
 
 def add_text(history, text):
+    history = history + [(text, None)]
+    return history, ""
+
+def add_scratch(history, text):
     history = history + [(text, None)]
     return history, ""
 
@@ -112,7 +128,7 @@ def bot(history, message):
     return history
 
 def RunAgent(history, message):
-    response = ChatAgent(user_input=message, chat_history=history)
+    response = ChatAgent(user_input=message, chatHistory=history)
     history[-1][1] = response
     return history
 
@@ -147,13 +163,13 @@ with gr.Blocks() as demo:
             sendIt = gr.Button(">>")
             
     txt.submit(add_text, [chatbot, txt], [chatbot, txt]).then(
-        bot, [chatbot, txt], chatbot
+        ScratchAgent, [txt, chatbot], chatbot
     )
     btn.upload(add_file, [chatbot, btn], [chatbot]).then(
         bot, [chatbot, txt], chatbot
     )
     sendIt.click(add_text, [chatbot, txt], [chatbot]).then(
-        RunAgent, [chatbot, txt], chatbot
+        ScratchAgent, [txt, chatbot], [chatbot]
     )
 
 demo.launch()
